@@ -21,9 +21,9 @@ public:
    * Creates a socket.
    * @param address supplies the socket's address.
    * @param bind_to_port supplies whether to actually bind the socket.
-   * @return Network::ListenSocketPtr an initialized and potentially bound socket.
+   * @return Network::ListenSocketSharedPtr an initialized and potentially bound socket.
    */
-  virtual Network::ListenSocketPtr
+  virtual Network::ListenSocketSharedPtr
   createListenSocket(Network::Address::InstanceConstSharedPtr address, bool bind_to_port) PURE;
 
   /**
@@ -56,14 +56,8 @@ public:
   virtual Network::FilterChainFactory& filterChainFactory() PURE;
 
   /**
-   * @return Network::Address::InstanceConstSharedPtr the configured address for the listener. This
-   *         may be distinct to the bound address, e.g. if the port is zero.
-   */
-  virtual Network::Address::InstanceConstSharedPtr address() PURE;
-
-  /**
    * @return Network::ListenSocket& the actual listen socket. The address of this socket may be
-   *         different from address() if for example the configured address binds to port zero.
+   *         different from configured if for example the configured address binds to port zero.
    */
   virtual Network::ListenSocket& socket() PURE;
 
@@ -108,8 +102,6 @@ public:
   virtual uint64_t listenerTag() PURE;
 };
 
-typedef std::unique_ptr<Listener> ListenerPtr;
-
 /**
  * A manager for all listeners and all threaded connection handling workers.
  */
@@ -118,21 +110,26 @@ public:
   virtual ~ListenerManager() {}
 
   /**
-   * Add a listener to the manager.
+   * Add a listener to the manager. fixfix
    * @param json supplies the configuration JSON. Will throw an EnvoyException if the listener can
    *        not be added.
+   * @return fixfix
    */
-  virtual void addListener(const Json::Object& json) PURE;
+  virtual bool addOrUpdateListener(const Json::Object& json) PURE;
 
   /**
-   * @return std::list<std::reference_wrapper<Listener>> a list of the currently loaded listeners.
+   * @return std::vector<std::reference_wrapper<Listener>> a list of the currently loaded listeners.
+   * fixfix validity
    */
-  virtual std::list<std::reference_wrapper<Listener>> listeners() PURE;
+  virtual std::vector<std::reference_wrapper<Listener>> listeners() PURE;
 
   /**
    * @return uint64_t the total number of connections owned by all listeners across all workers.
    */
   virtual uint64_t numConnections() PURE;
+
+  // fixfix
+  virtual bool removeListener(const std::string& listener_name) PURE;
 
   /**
    * Start all workers accepting new connections on all added listeners.

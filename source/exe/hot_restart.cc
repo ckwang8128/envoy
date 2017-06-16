@@ -176,6 +176,7 @@ void HotRestartImpl::drainParentListeners() {
 }
 
 int HotRestartImpl::duplicateParentListenSocket(const std::string& address) {
+  // fixfix parent shutdown
   if (options_.restartEpoch() == 0) {
     return -1;
   }

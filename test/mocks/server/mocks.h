@@ -126,17 +126,12 @@ public:
   MockListenerComponentFactory();
   ~MockListenerComponentFactory();
 
-  Network::ListenSocketPtr createListenSocket(Network::Address::InstanceConstSharedPtr address,
-                                              bool bind_to_port) override {
-    return Network::ListenSocketPtr{createListenSocket_(address, bind_to_port)};
-  }
-
   MOCK_METHOD2(createFilterFactoryList, std::vector<Configuration::NetworkFilterFactoryCb>(
                                             const std::vector<Json::ObjectSharedPtr>& filters,
                                             Configuration::FactoryContext& context));
-  MOCK_METHOD2(createListenSocket_,
-               Network::ListenSocket*(Network::Address::InstanceConstSharedPtr address,
-                                      bool bind_to_port));
+  MOCK_METHOD2(createListenSocket,
+               Network::ListenSocketSharedPtr(Network::Address::InstanceConstSharedPtr address,
+                                              bool bind_to_port));
   MOCK_METHOD0(nextListenerTag, uint64_t());
 };
 
@@ -145,9 +140,10 @@ public:
   MockListenerManager();
   ~MockListenerManager();
 
-  MOCK_METHOD1(addListener, void(const Json::Object& json));
-  MOCK_METHOD0(listeners, std::list<std::reference_wrapper<Listener>>());
+  MOCK_METHOD1(addOrUpdateListener, bool(const Json::Object& json));
+  MOCK_METHOD0(listeners, std::vector<std::reference_wrapper<Listener>>());
   MOCK_METHOD0(numConnections, uint64_t());
+  MOCK_METHOD1(removeListener, bool(const std::string& listener_name));
   MOCK_METHOD1(startWorkers, void(GuardDog& guard_dog));
   MOCK_METHOD0(stopListeners, void());
   MOCK_METHOD0(stopWorkers, void());
@@ -179,9 +175,33 @@ public:
   MockWorkerFactory();
   ~MockWorkerFactory();
 
+  // Server::WorkerFactory
   WorkerPtr createWorker() override { return WorkerPtr{createWorker_()}; }
 
   MOCK_METHOD0(createWorker_, Worker*());
+};
+
+class MockWorker : public Worker {
+public:
+  MockWorker();
+  ~MockWorker();
+
+  void callRemovalCompletion() {
+    EXPECT_NE(nullptr, remove_listener_completion_);
+    remove_listener_completion_();
+    remove_listener_completion_ = nullptr;
+  }
+
+  // Server::Worker
+  MOCK_METHOD1(addListener, void(Listener& listener));
+  MOCK_METHOD0(numConnections, uint64_t());
+  MOCK_METHOD2(removeListener, void(Listener& listener, std::function<void()> completion));
+  MOCK_METHOD1(start, void(GuardDog& guard_dog));
+  MOCK_METHOD0(stop, void());
+  MOCK_METHOD1(stopListener, void(Listener& listener));
+  MOCK_METHOD0(stopListeners, void());
+
+  std::function<void()> remove_listener_completion_;
 };
 
 class MockInstance : public Instance {

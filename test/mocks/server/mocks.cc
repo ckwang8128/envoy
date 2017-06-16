@@ -6,6 +6,7 @@
 #include "gtest/gtest.h"
 
 using testing::_;
+using testing::Invoke;
 using testing::Return;
 using testing::ReturnNew;
 using testing::ReturnRef;
@@ -53,6 +54,15 @@ MockListener::~MockListener() {}
 
 MockWorkerFactory::MockWorkerFactory() {}
 MockWorkerFactory::~MockWorkerFactory() {}
+
+MockWorker::MockWorker() {
+  ON_CALL(*this, removeListener(_, _))
+      .WillByDefault(Invoke([this](Listener&, std::function<void()> completion) -> void {
+        EXPECT_EQ(nullptr, remove_listener_completion_);
+        remove_listener_completion_ = completion;
+      }));
+}
+MockWorker::~MockWorker() {}
 
 MockInstance::MockInstance() : ssl_context_manager_(runtime_loader_) {
   ON_CALL(*this, threadLocal()).WillByDefault(ReturnRef(thread_local_));

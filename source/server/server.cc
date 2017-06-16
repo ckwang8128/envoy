@@ -21,6 +21,7 @@
 #include "common/network/address_impl.h"
 #include "common/runtime/runtime_impl.h"
 #include "common/stats/statsd.h"
+#include "common/upstream/cluster_manager_impl.h"
 
 #include "server/configuration_impl.h"
 #include "server/connection_handler_impl.h"
@@ -212,7 +213,6 @@ void InstanceImpl::initialize(Options& options, TestHooks& hooks,
 }
 
 void InstanceImpl::startWorkers(TestHooks& hooks) {
-  ENVOY_LOG(warn, "all dependencies initialized. starting workers");
   try {
     listener_manager_->startWorkers(*guard_dog_);
   } catch (const Network::CreateListenerException& e) {
